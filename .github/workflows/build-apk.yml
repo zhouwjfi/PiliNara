@@ -45,10 +45,11 @@ jobs:
             echo "::warning::未配置签名 secret，将使用 debug 签名"
           fi
 
+      - name: 应用 Flutter / material_ui 补丁
+        run: pwsh lib/scripts/patch.ps1 android
+
       - name: 构建 release APK
-        run: |
-          flutter pub get
-          flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi
 
       - name: 重命名
         run: |
