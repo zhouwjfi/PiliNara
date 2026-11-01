@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/http/user.dart';
 import 'package:PiliPlus/pages/common/publish/publish_route.dart';
+import 'package:PiliPlus/services/newbv_cast_service.dart';
 import 'package:PiliPlus/utils/image_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -32,6 +33,7 @@ void imageSaveDialog({
   required String? cover,
   dynamic aid,
   String? bvid,
+  int? roomId,
   Orientation orientation = .landscape,
   double aspectRatio = Style.aspectRatio16x9,
 }) {
@@ -75,6 +77,28 @@ void imageSaveDialog({
                   padding: const .fromLTRB(12, 10, 8, 10),
                   child: Row(
                     children: [
+                      if ((bvid != null && bvid.isNotEmpty) || roomId != null)
+                        iconButton(
+                          iconSize: _iconSize,
+                          tooltip: roomId != null ? '投屏直播到 TV' : '投屏到 TV',
+                          onPressed: () {
+                            Get.back();
+                            if (roomId != null) {
+                              NewBvCast.castLive(
+                                roomId: roomId,
+                                fallbackTitle: title,
+                                fallbackCover: cover,
+                              );
+                            } else {
+                              NewBvCast.castBvid(
+                                bvid: bvid!,
+                                fallbackTitle: title,
+                                fallbackCover: cover,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.tv),
+                        ),
                       if (title != null)
                         Expanded(
                           child: SelectionText(

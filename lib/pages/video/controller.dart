@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert' show jsonDecode;
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io';
 import 'dart:math' show Random, min;
 import 'dart:ui';
@@ -63,6 +63,8 @@ import 'package:PiliPlus/plugin/pl_player/models/heart_beat_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_status.dart';
 import 'package:PiliPlus/services/download/download_library_service.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/services/newbv_cast_service.dart';
+import 'package:PiliPlus/services/newbv_discovery_service.dart';
 import 'package:PiliPlus/services/pip_overlay_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/connectivity_utils.dart';
@@ -84,6 +86,7 @@ import 'package:PiliPlus/utils/utils.dart';
 import 'package:PiliPlus/utils/video_utils.dart';
 import 'package:collection/collection.dart';
 import 'package:dio/dio.dart' show Options;
+import 'package:dlna_dart/dlna.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart'
     show ExtendedNestedScrollViewState;
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -2191,8 +2194,26 @@ class VideoDetailController extends GetxController
 
   ThemeData get theme => ThemeUtils.theme;
 
+  /// 点击投屏：优先复用上次扫描到的设备；连接失败则重新全量扫描一次
+  ///
+  /// 返回 false 表示本轮没有可用设备或投屏失败，调用方可据此隐藏入口
+  Future<bool> castWithRescan() async {
+    final discoverer = NewBvDiscoverer.instance;
+    var device = discoverer.castDevice.value;
+    if (device == null) {
+      device = await discoverer.scan();
+      if (device == null) return false;
+      return onCast(device);
+    }
+    if (await onCast(device)) return true;
+    // 缓存的设备可能已下线，重新全量扫描一次后再试
+    device = await discoverer.scan();
+    if (device == null) return false;
+    return onCast(device);
+  }
+
   @pragma('vm:notify-debugger-on-exception')
-  Future<void> onCast() async {
+  Future<bool> onCast(DLNADevice device) async {
     SmartDialog.showLoading();
     final res = await VideoHttp.tvPlayUrl(
       cid: cid.value,
@@ -2205,7 +2226,7 @@ class VideoDetailController extends GetxController
       final first = response.durl?.firstOrNull;
       if (first == null || first.playUrls.isEmpty) {
         SmartDialog.showToast('不支持投屏');
-        return;
+        return false;
       }
       final url = VideoUtils.getCdnUrl(first.playUrls);
 
@@ -2224,15 +2245,33 @@ class VideoDetailController extends GetxController
       if (kDebugMode) {
         debugPrint(title);
       }
-      Get.toNamed(
-        '/dlna',
-        parameters: {
-          'url': url,
-          'title': ?title,
-        },
-      );
+      try {
+        await device.request(
+          'SetAVTransportURI',
+          utf8.encode(
+            buildCastSoap(
+              url: url,
+              title: title ?? '',
+              aid: aid,
+              bvid: bvid,
+              cid: cid.value,
+              epid: epId ?? 0,
+              sid: seasonId ?? 0,
+              cover: cover.value,
+            ),
+          ),
+        );
+        await device.play();
+      } catch (_) {
+        SmartDialog.showToast('投屏失败');
+        return false;
+      }
+      // 投屏成功后暂停本地播放
+      await plPlayerController.pause();
+      return true;
     } else {
       res.toast();
+      return false;
     }
   }
 }

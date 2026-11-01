@@ -1879,6 +1879,7 @@ class _VideoDetailPageVState extends State<VideoDetailPageV>
                         videoDetailController.plPlayerController.onCloseAll,
                   ),
                 ),
+                CastTvButton(onTap: videoDetailController.castWithRescan),
                 const Spacer(),
                 _moreBtn(
                   Colors.white,

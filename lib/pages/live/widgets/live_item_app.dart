@@ -29,6 +29,7 @@ class LiveCardVApp extends StatelessWidget {
     void onLongPress() => imageSaveDialog(
       title: item.title,
       cover: showFirstFrame ? item.systemCover : item.cover,
+      roomId: item.roomid,
     );
     return Stack(
       children: [

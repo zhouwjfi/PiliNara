@@ -433,6 +433,23 @@ class HeaderControlState extends State<HeaderControl>
 
   Box setting = GStorage.setting;
 
+  /// 投屏入口是否显示：进入页面默认显示，扫描不到设备后仅在本页隐藏
+  bool _castVisible = true;
+  bool _casting = false;
+
+  Future<void> _onCastTap() async {
+    if (_casting) return;
+    _casting = true;
+    try {
+      final success = await videoDetailCtr.castWithRescan();
+      if (!success && mounted) {
+        setState(() => _castVisible = false);
+      }
+    } finally {
+      _casting = false;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -2008,20 +2025,21 @@ class HeaderControlState extends State<HeaderControl>
                           ),
                         ),
                       ),
-                    SizedBox(
-                      width: btnWidth,
-                      height: btnHeight,
-                      child: IconButton(
-                        tooltip: '投屏',
-                        style: btnStyle,
-                        onPressed: videoDetailCtr.onCast,
-                        icon: const Icon(
-                          Icons.cast,
-                          size: 19,
-                          color: Colors.white,
+                    if (_castVisible)
+                      SizedBox(
+                        width: btnWidth,
+                        height: btnHeight,
+                        child: IconButton(
+                          tooltip: '投屏',
+                          style: btnStyle,
+                          onPressed: _onCastTap,
+                          icon: const Icon(
+                            Icons.tv,
+                            size: 19,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                   if (kDebugMode || plPlayerController.enableSponsorBlock)
                     SizedBox(
@@ -2283,3 +2301,60 @@ class HeaderControlState extends State<HeaderControl>
     );
   }
 }
+
+/// 播放前的投屏入口：点击后才去探测 newBV，本页探测失败则隐藏
+class CastTvButton extends StatefulWidget {
+  const CastTvButton({required this.onTap, super.key});
+
+  /// 返回 false 表示本轮未找到设备或投屏失败
+  final Future<bool> Function() onTap;
+
+  @override
+  State<CastTvButton> createState() => _CastTvButtonState();
+}
+
+class _CastTvButtonState extends State<CastTvButton> {
+  bool _visible = true;
+  bool _busy = false;
+
+  Future<void> _handleTap() async {
+    if (_busy) return;
+    _busy = true;
+    try {
+      final success = await widget.onTap();
+      if (!success && mounted) {
+        setState(() => _visible = false);
+      }
+    } finally {
+      _busy = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_visible) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(
+      width: 42,
+      height: 34,
+      child: IconButton(
+        tooltip: '投屏',
+        onPressed: _handleTap,
+        icon: const Icon(
+          Icons.tv,
+          size: 15,
+          color: Colors.white,
+          shadows: [
+            Shadow(
+              blurRadius: 1.5,
+              color: Colors.black,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+

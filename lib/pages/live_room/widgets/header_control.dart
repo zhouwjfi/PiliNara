@@ -12,6 +12,7 @@ import 'package:PiliPlus/pages/video/widgets/header_control.dart';
 import 'package:PiliPlus/pages/video/widgets/header_mixin.dart';
 import 'package:PiliPlus/plugin/pl_player/controller.dart';
 import 'package:PiliPlus/plugin/pl_player/widgets/common_btn.dart';
+import 'package:PiliPlus/services/newbv_cast_service.dart';
 import 'package:PiliPlus/services/shutdown_timer_service.dart'
     show shutdownTimerService;
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -190,10 +191,16 @@ class _LiveHeaderControlState extends State<LiveHeaderControl>
             ComBtn(
               height: 30,
               tooltip: '投屏',
-              onTap: liveController.onCast,
+              onTap: () async {
+                final ok = await NewBvCast.castLive(
+                  roomId: liveController.roomId,
+                  fallbackTitle: liveController.title.value,
+                );
+                if (ok) plPlayerController.pause();
+              },
               icon: const Icon(
                 size: 18,
-                Icons.cast,
+                Icons.tv,
                 color: Colors.white,
               ),
             ),

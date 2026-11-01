@@ -9,6 +9,7 @@ import 'package:PiliPlus/models_new/space/space_archive/item.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/video/ai_conclusion/view.dart';
 import 'package:PiliPlus/pages/video/introduction/ugc/controller.dart';
+import 'package:PiliPlus/services/newbv_cast_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
@@ -256,6 +257,11 @@ class VideoPopupMenu extends StatelessWidget {
           videoItem.bvid!,
           const Icon(CustomIcons.identifier_circle, size: 16),
           () => Utils.copyText(videoItem.bvid!),
+        ),
+        _VideoCustomAction(
+          '投屏到 TV',
+          const Icon(Icons.tv, size: 16),
+          () => NewBvCast.castItem(videoItem),
         ),
         if (Accounts.main.isLogin)
           _VideoCustomAction(

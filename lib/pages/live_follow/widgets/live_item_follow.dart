@@ -20,6 +20,7 @@ class LiveCardVFollow extends StatelessWidget {
     void onLongPress() => imageSaveDialog(
       title: liveItem.title,
       cover: liveItem.roomCover,
+      roomId: liveItem.roomid,
     );
     return Card(
       child: InkWell(

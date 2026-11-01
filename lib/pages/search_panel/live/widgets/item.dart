@@ -18,6 +18,7 @@ class LiveItem extends StatelessWidget {
     void onLongPress() => imageSaveDialog(
       title: liveItem.title.map((item) => item.text).join(),
       cover: liveItem.cover,
+      roomId: liveItem.roomid,
     );
     return Card(
       child: InkWell(
